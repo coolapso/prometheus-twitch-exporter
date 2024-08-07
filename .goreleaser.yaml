@@ -1,0 +1,21 @@
+# .goreleaser.yaml
+builds:
+    binary: twitch-exporter
+    env:
+      - CGO_ENABLED=0
+
+    # GOOS list to build for.
+    # For more info refer to: https://go.dev/doc/install/source#environment
+    #
+    # Default: [ 'darwin', 'linux', 'windows' ].
+    goos:
+      - linux
+
+    goarch:
+      - amd64
+      - arm
+      - arm64
+
+    goarm:
+      - 6
+      - 7
