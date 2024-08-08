@@ -64,9 +64,7 @@ func NewServer(e *collectors.Exporter) *http.Server {
 			}
 		}
 
-
 	})
-
 
 	return &http.Server{Addr: ":" + s.ListenPort}
 }
