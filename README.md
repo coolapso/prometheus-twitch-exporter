@@ -1,5 +1,9 @@
 # PROMETHEUS TWITCH EXPORTER
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/coolapso/prometheus-twitch-exporter)](https://goreportcard.com/report/github.com/coolapso/prometheus-twitch-exporter)
+[![Docker image version](https://img.shields.io/docker/v/coolapso/twitch-exporter/latest?logo=docker)](https://hub.docker.com/r/coolapso/twitch-exporter)
+[![release](https://github.com/coolapso/prometheus-twitch-exporter/actions/workflows/release.yaml/badge.svg)](https://github.com/coolapso/prometheus-twitch-exporter/actions/workflows/release.yaml)
+
 Prometheus twitch exporter to monitor twitch streams with prometheus. With support Oauth support, for both user and application tokens. 
 
 > [!IMPORTANT]
