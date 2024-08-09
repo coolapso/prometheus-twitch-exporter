@@ -58,7 +58,7 @@ func init() {
 	viper.SetDefault("METRICS_PATH", defaultMetricsPath)
 	viper.SetDefault("LISTEN_PORT", defaultListenPort)
 	viper.SetDefault("ADDRESS", defaultAddress)
-	viper.SetDefault("TWITCH_CHANNELS", []string{})
+	viper.SetDefault("TWITCH_CHANNELS", nil)
 	viper.SetDefault("TWITCH_USER", "")
 	viper.SetDefault("TWITCH_USER_TOKEN", defaultTwitchUserToken)
 	viper.SetDefault("TWITCH_CLIENT_ID", "")
@@ -134,12 +134,13 @@ func checkCoreSettings() error {
 func setChannelList(s *collectors.Settings) {
 	isInList := false
 	for _, c := range twitchChannels {
-		s.Channels = append(s.Channels, collectors.TwitchChannel{Name: c})
 		if s.User == c {
 			isInList = true
 		}
+		s.Channels = append(s.Channels, collectors.TwitchChannel{Name: c})
 	}
-	if !isInList {
+
+	if !isInList && s.User != ""{
 		s.Channels = append(s.Channels, collectors.TwitchChannel{Name: s.User})
 	}
 }
