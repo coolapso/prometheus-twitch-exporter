@@ -158,7 +158,7 @@ func exporter() {
 		logger.Info("User token not enabled, using application token instead")
 	}
 
-	logger.Info(fmt.Sprintf("starting promtheus twitch exporter %v %v", version.Info(), version.BuildContext()))
+	logger.Info(fmt.Sprintf("starting prometheus twitch exporter %v %v", version.Info(), version.BuildContext()))
 	exporter, err := collectors.NewExporter(s, logger)
 	if err != nil {
 		logger.Error("Failed to create new exporter", "err", err)
