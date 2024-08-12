@@ -116,27 +116,18 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	for _, twitchChannel := range e.Settings.Channels {
-		isLive, err := e.IsLive(twitchChannel.Name)
-		if err != nil {
-			e.Logger.Error("Failed to get channel status", "err", err)
-		}
-
-		viewerCount, err := e.ViewerCount(twitchChannel.Name)
-		if err != nil {
-			e.Logger.Error("Failed to get viewer count", "err", err)
-		}
 
 		ch <- prometheus.MustNewConstMetric(
 			e.metrics.isLive,
 			prometheus.GaugeValue,
-			float64(isLive),
+			float64(e.IsLive(twitchChannel.Name)),
 			twitchChannel.Name,
 		)
 
 		ch <- prometheus.MustNewConstMetric(
 			e.metrics.viewerCount,
 			prometheus.GaugeValue,
-			float64(viewerCount),
+			float64(e.ViewerCount(twitchChannel.Name)),
 			twitchChannel.Name,
 		)
 	}
@@ -159,44 +150,48 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 // Returns 1 if broadcasting, 0 if not
-func (e *Exporter) IsLive(channelName string) (isLive int, err error) {
-	foundChannels, err := e.client.SearchChannels(&helix.SearchChannelsParams{
+func (e *Exporter) IsLive(channelName string) int {
+	resp, err := e.client.SearchChannels(&helix.SearchChannelsParams{
 		Channel: channelName,
 	})
 	if err != nil {
-		return 0, err
+		e.Logger.Error("Failed to get channel status", "err", err)
+		return 0
 	}
 
-	if foundChannels.StatusCode != 200 {
-		return 0, fmt.Errorf(foundChannels.Error)
+	if resp.StatusCode != 200 {
+		e.Logger.Error("Failed to get channel status", "statusCude", resp.StatusCode, "err", resp.ErrorMessage)
+		return 0
 	}
 
-	for _, channel := range foundChannels.Data.Channels {
+	for _, channel := range resp.Data.Channels {
 		if strings.EqualFold(channel.DisplayName, channelName) && channel.IsLive {
-			return 1, nil
+			return 1
 		}
 	}
 
-	return 0, nil
+	return 0
 }
 
-func (e *Exporter) ViewerCount(channelName string) (count int, err error) {
-	stream, err := e.client.GetStreams(&helix.StreamsParams{
+func (e *Exporter) ViewerCount(channelName string) int {
+	resp, err := e.client.GetStreams(&helix.StreamsParams{
 		UserLogins: []string{channelName},
 	})
 	if err != nil {
-		return 0, err
+		e.Logger.Error("Failed to get viewer count", "err", err)
+		return 0
 	}
 
-	if stream.StatusCode != 200 {
-		return 0, fmt.Errorf(stream.Error)
+	if resp.StatusCode != 200 {
+		e.Logger.Error("Failed to get viewer count", "statusCode", resp.StatusCode, "err", resp.ErrorMessage)
+		return 0
 	}
 
-	if len(stream.Data.Streams) <= 0 {
-		return 0, nil
+	if len(resp.Data.Streams) <= 0 {
+		return 0
 	}
 
-	return stream.Data.Streams[0].ViewerCount, nil
+	return resp.Data.Streams[0].ViewerCount
 }
 
 func (e *Exporter) getUserID() string {
