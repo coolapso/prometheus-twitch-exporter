@@ -47,9 +47,10 @@ type Settings struct {
 }
 
 type metrics struct {
-	isLive      *prometheus.Desc
-	viewerCount *prometheus.Desc
-	subCount    *prometheus.Desc
+	isLive			  *prometheus.Desc
+	viewerCount		  *prometheus.Desc
+	subCount		  *prometheus.Desc
+	followerCount    *prometheus.Desc
 }
 
 type Exporter struct {
@@ -145,6 +146,13 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			float64(e.subCount()),
 			e.Settings.User.Name,
 		)
+
+		ch <- prometheus.MustNewConstMetric(
+			e.metrics.followerCount,
+			prometheus.GaugeValue,
+			float64(e.followerCount()),
+			e.Settings.User.Name,
+		)
 	}
 }
 
@@ -234,6 +242,23 @@ func (e *Exporter) subCount() int {
 	}
 
 	return len(resp.Data.Subscriptions)
+}
+ 
+func (e *Exporter) followerCount() int {
+	resp, err := e.client.GetChannelFollows(&helix.GetChannelFollowsParams{
+		BroadcasterID: e.getUserID(),
+		First:         1,
+	})
+
+	if err != nil {
+		e.Logger.Error("Failed to get followers", "err", err)
+	}
+
+	if resp.StatusCode != 200 {
+		e.Logger.Error("Failed to get followers", "statusCode", resp.StatusCode, "err", resp.ErrorMessage)
+	}
+
+	return resp.Data.Total
 }
 
 func (e *Exporter) isUserTokenValid() bool {
@@ -325,6 +350,12 @@ func newMetrics() *metrics {
 		subCount: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "subscribers_count"),
 			"Channel current total subscribers",
+			[]string{"name"}, nil,
+		),
+
+		followerCount: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "followers_total"),
+			"Channel total number of followers",
 			[]string{"name"}, nil,
 		),
 	}
