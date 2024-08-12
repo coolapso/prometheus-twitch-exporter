@@ -19,9 +19,9 @@ Currently you can only grab one of the binaries provided in the releases page, o
 | Metric | Meaning | Labels | type |
 | ------ | ------- | ------ | ---- |
 | twitch_is_live | If twitch channel is broadcasting | name | gauge |
-| twitch_viewer_count | Channel current viewer count | name | gauge |
-| twitch_channel_followers | The number of channel followers | name | gauge |
-| twitch_channel_subscribers | The number of channel subscribers | name, tier, gifted | gauge |
+| twitch_viewer_total | Channel current viewer count | name | gauge |
+| twitch_channel_followers_total | The number of channel followers | name | gauge |
+| twitch_channel_subscribers_total | The number of channel subscribers | name | gauge |
 
 ## Usage
 
