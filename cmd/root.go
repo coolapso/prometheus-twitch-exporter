@@ -83,7 +83,7 @@ func init() {
 	rootCmd.Flags().StringSliceVar(&twitchChannels, "twitch.channels", nil, "List of channels to get basic metrics from")
 	_ = viper.BindPFlag("twitch.channels", rootCmd.Flags().Lookup("TWITCH_CHANNELS"))
 
-	rootCmd.Flags().StringVar(&settings.User, "twitch.user", "", "The user associated with the user token to get extra metrics from")
+	rootCmd.Flags().StringVar(&settings.User.Name, "twitch.user", "", "The user associated with the user token to get extra metrics from")
 	_ = viper.BindPFlag("twitch.user", rootCmd.Flags().Lookup("TWITCH_USER"))
 
 	rootCmd.Flags().BoolVar(&settings.UserToken, "user.token", false, "If going to use the provided token as a user token")
@@ -104,7 +104,7 @@ func init() {
 	settings.ListenPort = viper.GetString("LISTEN_PORT")
 	settings.Address = viper.GetString("ADDRESS")
 	twitchChannels = viper.GetStringSlice("TWITCH_CHANNELS")
-	settings.User = viper.GetString("TWITCH_USER")
+	settings.User.Name = viper.GetString("TWITCH_USER")
 	settings.UserToken = viper.GetBool("TWITCH_USER_TOKEN")
 	settings.ApiSettings = collectors.ApiSettings{
 		Options: helix.Options{
@@ -134,14 +134,14 @@ func checkCoreSettings() error {
 func setChannelList(s *collectors.Settings) {
 	isInList := false
 	for _, c := range twitchChannels {
-		if s.User == c {
+		if s.User.Name == c {
 			isInList = true
 		}
 		s.Channels = append(s.Channels, collectors.TwitchChannel{Name: c})
 	}
 
-	if !isInList && s.User != ""{
-		s.Channels = append(s.Channels, collectors.TwitchChannel{Name: s.User})
+	if !isInList && s.User.Name != "" {
+		s.Channels = append(s.Channels, collectors.TwitchChannel{Name: s.User.Name})
 	}
 }
 

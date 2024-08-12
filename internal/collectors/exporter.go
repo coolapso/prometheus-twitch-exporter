@@ -19,18 +19,10 @@ var (
 	userTokenScopes = []string{"channel:read:subscriptions", "user:read:email"}
 )
 
-type subscribers struct {
-	total int
-	t1    int
-	t2    int
-	t3    int
-	prime int
-}
-
 type TwitchChannel struct {
 	Name        string
 	ViewerCount int
-	Subscribers subscribers
+	SubCount    int
 }
 
 type ApiSettings struct {
@@ -46,7 +38,7 @@ type Settings struct {
 	ApiSettings ApiSettings
 	Channels    []TwitchChannel
 	UserToken   bool
-	User        string
+	User        TwitchChannel
 	LogLevel    string
 	LogFormat   string
 	MetricsPath string
@@ -57,6 +49,7 @@ type Settings struct {
 type metrics struct {
 	isLive      *prometheus.Desc
 	viewerCount *prometheus.Desc
+	subCount    *prometheus.Desc
 }
 
 type Exporter struct {
@@ -97,7 +90,7 @@ func (e *Exporter) collectUserMetrics() bool {
 		return false
 	}
 
-	if e.Settings.User == "" {
+	if e.Settings.User.Name == "" {
 		e.Logger.Warn("User token provided, but no user was provided, consider removing the --user.token flag or set a user to monitor. Not scraping user metrics")
 
 		return false
@@ -146,7 +139,12 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	if e.collectUserMetrics() {
-		e.Logger.Info("User Chanel Metrics not yet available, only retrieving basic metrics")
+		ch <- prometheus.MustNewConstMetric(
+			e.metrics.subCount,
+			prometheus.GaugeValue,
+			float64(e.subCount()),
+			e.Settings.User.Name,
+		)
 	}
 }
 
@@ -189,6 +187,53 @@ func (e *Exporter) ViewerCount(channelName string) (count int, err error) {
 	}
 
 	return stream.Data.Streams[0].ViewerCount, nil
+}
+
+func (e *Exporter) getUserID() string {
+	resp, err := e.client.GetUsers(&helix.UsersParams{
+		Logins: []string{e.Settings.User.Name},
+	})
+	if err != nil {
+		e.Logger.Error("Failed to get user id", "err", err)
+		return ""
+	}
+
+	if resp.StatusCode != 200 {
+		e.Logger.Error("Failed to get user id", "statusCode", resp.StatusCode, "err", resp.ErrorMessage)
+		return ""
+	}
+
+	var user helix.User
+	for _, u := range resp.Data.Users {
+		if u.Login == e.Settings.User.Name {
+			user = u
+		}
+	}
+
+	if user.ID == "" {
+		e.Logger.Error(fmt.Sprintf("Could not find user with login %v", e.Settings.User))
+		return ""
+	}
+
+	return user.ID
+}
+
+// TODO: Add more granularity on the metrics, by gifted and tier
+func (e *Exporter) subCount() int {
+	resp, err := e.client.GetSubscriptions(&helix.SubscriptionsParams{
+		BroadcasterID: e.getUserID(),
+		First:         1,
+	})
+
+	if err != nil {
+		e.Logger.Error("Failed to get subscribers", "err", err)
+	}
+
+	if resp.StatusCode != 200 {
+		e.Logger.Error("Failed to get subscribers", "statusCode", resp.StatusCode, "err", resp.ErrorMessage)
+	}
+
+	return len(resp.Data.Subscriptions)
 }
 
 func (e *Exporter) isUserTokenValid() bool {
@@ -274,6 +319,12 @@ func newMetrics() *metrics {
 		viewerCount: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "viewer_count"),
 			"Channel current viewer count",
+			[]string{"name"}, nil,
+		),
+
+		subCount: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "subscribers_count"),
+			"Channel current total subscribers",
 			[]string{"name"}, nil,
 		),
 	}
