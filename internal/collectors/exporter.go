@@ -344,13 +344,13 @@ func newMetrics() *metrics {
 		),
 
 		viewerCount: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "viewer_count"),
+			prometheus.BuildFQName(namespace, "", "viewer_total"),
 			"Channel current viewer count",
 			[]string{"name"}, nil,
 		),
 
 		subCount: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "subscribers_count"),
+			prometheus.BuildFQName(namespace, "", "subscribers_total"),
 			"Channel current total subscribers",
 			[]string{"name"}, nil,
 		),
