@@ -63,6 +63,8 @@ type Exporter struct {
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.metrics.isLive
 	ch <- e.metrics.viewerCount
+	ch <- e.metrics.subCount
+	ch <- e.metrics.followerCount
 }
 
 func (e *Exporter) handleAppTokens() {
