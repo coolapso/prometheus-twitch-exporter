@@ -30,18 +30,19 @@ Usage:
   twitch-exporter [flags]
 
 Flags:
-      --address string            The address to access the exporter used for OAuth redirect URI (default "localhost")
-      --client.id string          Twitch client ID
-      --client.secret string      Twitch client secret
-  -h, --help                      Help for twitch-exporter
-      --listen.port string        Port to listen on (default "9184")
-      --log.format string         Exporter log format, text or JSON (default "text")
+      --access.token string       twitch user access token
+      --address string            The address to access the exporter used for oauth redirect uri (default "localhost")
+      --client.id string          twitch client id
+      --client.secret string      twitch client secret
+  -h, --help                      help for twitch-exporter
+      --listen.port string        Port to listen at (default "9184")
+      --log.format string         Exporter log format, text or json (default "text")
       --log.level string          Exporter log level (default "info")
       --metrics.path string       Path to expose metrics at (default "/metrics")
-      --refresh.token string      Twitch refresh token
+      --refresh.token string      twitch refresh token
       --twitch.channels strings   List of channels to get basic metrics from
       --twitch.user string        The user associated with the user token to get extra metrics from
-      --user.token                Use the provided token as a user token
+      --user.token                If going to use the provided token as a user token
 ```
 
 You can also use environment variables. The most accurate list for them is available [here](cmd/root.go).
@@ -136,6 +137,16 @@ docker run -d -p 9184:9184 \
         -e TWITCH_USER_TOKEN=true \
         coolapso/twitch-exporter
 ```
+
+*Pre-generated access token* 
+
+You can also pre-generate the access token and refresh token, for example with Twitch CLI:
+
+```
+twitch token get -u --scopes "channel:read:subscriptions"
+```
+
+Then provide them to the application using the flags or corresponding environment variables. This way, you won't have to handle the authentication flow every time.
 
 # Contributions
 

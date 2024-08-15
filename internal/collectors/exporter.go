@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	userTokenScopes = []string{"channel:read:subscriptions", "user:read:email"}
+	userTokenScopes = []string{"channel:read:subscriptions"}
 )
 
 type TwitchChannel struct {
@@ -31,7 +31,6 @@ type ApiSettings struct {
 	appTokenExpireIn  int
 	AuthorizationURL  string
 	AuthorizationCode string
-	UserRefreshToken  string
 }
 
 type Settings struct {
@@ -47,10 +46,10 @@ type Settings struct {
 }
 
 type metrics struct {
-	isLive			  *prometheus.Desc
-	viewerCount		  *prometheus.Desc
-	subCount		  *prometheus.Desc
-	followerCount    *prometheus.Desc
+	isLive        *prometheus.Desc
+	viewerCount   *prometheus.Desc
+	subCount      *prometheus.Desc
+	followerCount *prometheus.Desc
 }
 
 type Exporter struct {
@@ -69,28 +68,40 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 
 func (e *Exporter) handleAppTokens() {
 	if e.isAppTokenExpired() {
-		e.Logger.Info("Getting new application token")
+		e.Logger.Info("getting new application token")
 		e.setNewAppToken()
 	}
 }
 
-func (e *Exporter) handleUserTokens() {
+func (e *Exporter) handleUserTokens() error {
 	apiSettings := e.Settings.ApiSettings
-	if apiSettings.UserRefreshToken == "" {
-		e.Logger.Info("No refresh token available, generating new user access token")
+
+	if apiSettings.Options.UserAccessToken == "" {
+		if apiSettings.AuthorizationCode == "" {
+			return fmt.Errorf("Authentication flow not completed, please use the authorization url to obtain an access token, or provide an access token")
+		}
+
 		e.setNewUserToken()
-		return
+		return nil
 	}
 
 	if !e.isUserTokenValid() {
+		if apiSettings.Options.RefreshToken == "" {
+			return fmt.Errorf("Access token available, but no refresh token provided, Please re-authenticate again, or provide a refresh token")
+		}
+
 		e.Logger.Info("User token no longer valid, refreshing")
 		e.refreshUserToken()
+		return nil
 	}
+
+	e.Logger.Debug("token is valid")
+	return nil
 }
 
 func (e *Exporter) collectUserMetrics() bool {
-	if !e.Settings.UserToken {
-		return false
+	if e.Settings.UserToken {
+		return true
 	}
 
 	if e.Settings.User.Name == "" {
@@ -99,18 +110,16 @@ func (e *Exporter) collectUserMetrics() bool {
 		return false
 	}
 
-	return true
+	return false
 }
 
-// TODO: Add Subs metrics
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	if e.Settings.UserToken {
-		if e.Settings.ApiSettings.AuthorizationCode == "" {
-			e.Logger.Error("User token provided, but authentication flow not completed, please use the authorization url")
-
+		err := e.handleUserTokens()
+		if err != nil {
+			e.Logger.Error(err.Error())
 			return
 		}
-		e.handleUserTokens()
 	} else {
 		e.handleAppTokens()
 	}
@@ -120,14 +129,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(
 			e.metrics.isLive,
 			prometheus.GaugeValue,
-			float64(e.IsLive(twitchChannel.Name)),
+			float64(e.isLive(twitchChannel.Name)),
 			twitchChannel.Name,
 		)
 
 		ch <- prometheus.MustNewConstMetric(
 			e.metrics.viewerCount,
 			prometheus.GaugeValue,
-			float64(e.ViewerCount(twitchChannel.Name)),
+			float64(e.viewerCount(twitchChannel.Name)),
 			twitchChannel.Name,
 		)
 	}
@@ -150,7 +159,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 // Returns 1 if broadcasting, 0 if not
-func (e *Exporter) IsLive(channelName string) int {
+func (e *Exporter) isLive(channelName string) int {
+	e.Logger.Debug("getting channel status", "channelName", channelName)
 	resp, err := e.client.SearchChannels(&helix.SearchChannelsParams{
 		Channel: channelName,
 	})
@@ -173,7 +183,8 @@ func (e *Exporter) IsLive(channelName string) int {
 	return 0
 }
 
-func (e *Exporter) ViewerCount(channelName string) int {
+func (e *Exporter) viewerCount(channelName string) int {
+	e.Logger.Debug("getting viewer count", "channelName", channelName)
 	resp, err := e.client.GetStreams(&helix.StreamsParams{
 		UserLogins: []string{channelName},
 	})
@@ -191,10 +202,13 @@ func (e *Exporter) ViewerCount(channelName string) int {
 		return 0
 	}
 
-	return resp.Data.Streams[0].ViewerCount
+	vc := resp.Data.Streams[0].ViewerCount
+	e.Logger.Debug("Got channel viewer count", "channelName", channelName, "count", vc)
+	return vc
 }
 
 func (e *Exporter) getUserID() string {
+	e.Logger.Debug("getting user ID", "user", e.Settings.User.Name)
 	resp, err := e.client.GetUsers(&helix.UsersParams{
 		Logins: []string{e.Settings.User.Name},
 	})
@@ -214,34 +228,41 @@ func (e *Exporter) getUserID() string {
 			user = u
 		}
 	}
+	userID := user.ID
 
-	if user.ID == "" {
+	if userID == "" {
 		e.Logger.Error(fmt.Sprintf("Could not find user with login %v", e.Settings.User))
 		return ""
 	}
 
-	return user.ID
+	e.Logger.Debug("user ID found", "userID", userID)
+	return userID
 }
 
 // TODO: Add more granularity on the metrics, by gifted and tier
 func (e *Exporter) subCount() int {
+	e.Logger.Debug("getting user sub count")
 	resp, err := e.client.GetSubscriptions(&helix.SubscriptionsParams{
 		BroadcasterID: e.getUserID(),
-		First:         1,
 	})
 
 	if err != nil {
 		e.Logger.Error("Failed to get subscribers", "err", err)
+		return 0
 	}
 
 	if resp.StatusCode != 200 {
 		e.Logger.Error("Failed to get subscribers", "statusCode", resp.StatusCode, "err", resp.ErrorMessage)
+		return 0
 	}
 
-	return len(resp.Data.Subscriptions)
+	sc := len(resp.Data.Subscriptions)
+	e.Logger.Debug("got subcount", "subCount", sc)
+	return sc
 }
- 
+
 func (e *Exporter) followerCount() int {
+	e.Logger.Debug("getting user follower count")
 	resp, err := e.client.GetChannelFollows(&helix.GetChannelFollowsParams{
 		BroadcasterID: e.getUserID(),
 		First:         1,
@@ -255,10 +276,14 @@ func (e *Exporter) followerCount() int {
 		e.Logger.Error("Failed to get followers", "statusCode", resp.StatusCode, "err", resp.ErrorMessage)
 	}
 
+	fc := resp.Data.Total
+	e.Logger.Debug("got channel follower count", "channelName", e.Settings.User.Name, "count", fc)
+
 	return resp.Data.Total
 }
 
 func (e *Exporter) isUserTokenValid() bool {
+	e.Logger.Debug("validating user token")
 	apiSettings := e.Settings.ApiSettings
 	isValid, resp, err := e.client.ValidateToken(apiSettings.Options.UserAccessToken)
 	if err != nil {
@@ -275,6 +300,7 @@ func (e *Exporter) isUserTokenValid() bool {
 }
 
 func (e *Exporter) isAppTokenExpired() bool {
+	e.Logger.Debug("checking if application token is expired")
 	apiSettings := e.Settings.ApiSettings
 	secondsSinceIssued := time.Since(apiSettings.appTokenIssuedAt).Seconds()
 	thirtyMinutesInSeconds := 1800
@@ -283,11 +309,11 @@ func (e *Exporter) isAppTokenExpired() bool {
 		return true
 	}
 
-	// We need a new app token if its about to expire in less than 30 mins
 	return int(secondsSinceIssued) >= (apiSettings.appTokenExpireIn - thirtyMinutesInSeconds)
 }
 
 func (e *Exporter) setNewAppToken() {
+	e.Logger.Debug("setting new application token")
 	resp, err := e.client.RequestAppAccessToken([]string{"user:read:email"})
 	if err != nil {
 		e.Logger.Error("Failed to request app access token", "err", err)
@@ -300,9 +326,11 @@ func (e *Exporter) setNewAppToken() {
 	e.client.SetAppAccessToken(resp.Data.AccessToken)
 	e.Settings.ApiSettings.appTokenExpireIn = resp.Data.ExpiresIn
 	e.Settings.ApiSettings.appTokenIssuedAt = time.Now()
+	e.Logger.Debug("new application token set")
 }
 
 func (e *Exporter) setNewUserToken() {
+	e.Logger.Debug("setting new user token")
 	resp, err := e.client.RequestUserAccessToken(e.Settings.ApiSettings.AuthorizationCode)
 	if err != nil {
 		e.Logger.Error("Failed to request user access token", "err", err)
@@ -313,11 +341,13 @@ func (e *Exporter) setNewUserToken() {
 	}
 
 	e.client.SetUserAccessToken(resp.Data.AccessToken)
-	e.Settings.ApiSettings.UserRefreshToken = resp.Data.RefreshToken
+	e.Settings.ApiSettings.Options.RefreshToken = resp.Data.RefreshToken
+	e.Logger.Debug("new user token set")
 }
 
 func (e *Exporter) refreshUserToken() {
-	resp, err := e.client.RefreshUserAccessToken(e.Settings.ApiSettings.UserRefreshToken)
+	e.Logger.Debug("refreshing user token")
+	resp, err := e.client.RefreshUserAccessToken(e.Settings.ApiSettings.Options.RefreshToken)
 	if err != nil {
 		e.Logger.Error("Failed to refresh user access token", "err", err)
 	}
@@ -327,7 +357,8 @@ func (e *Exporter) refreshUserToken() {
 	}
 
 	e.client.SetUserAccessToken(resp.Data.AccessToken)
-	e.Settings.ApiSettings.UserRefreshToken = resp.Data.RefreshToken
+	e.Settings.ApiSettings.Options.RefreshToken = resp.Data.RefreshToken
+	e.Logger.Debug("user token refreshed")
 }
 
 func newMetrics() *metrics {
@@ -374,7 +405,7 @@ func newHelixClient(s *Settings, logger *slog.Logger) (*helix.Client, error) {
 			State:        "prometheus-twitch-exporter",
 			ForceVerify:  false,
 		})
-		logger.Info(fmt.Sprintf("Please authorize twitch exporter at: %v", s.ApiSettings.AuthorizationURL))
+		logger.Info(fmt.Sprintf("twitch authorization url: %v", s.ApiSettings.AuthorizationURL))
 
 		return client, err
 	}

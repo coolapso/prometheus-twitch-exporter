@@ -63,6 +63,7 @@ func init() {
 	viper.SetDefault("TWITCH_USER_TOKEN", defaultTwitchUserToken)
 	viper.SetDefault("TWITCH_CLIENT_ID", "")
 	viper.SetDefault("TWITCH_CLIENT_SECRET", "")
+	viper.SetDefault("TWITCH_ACCESS_TOKEN", "")
 	viper.SetDefault("TWITCH_REFRESH_TOKEN", "")
 
 	rootCmd.Flags().StringVar(&settings.LogLevel, "log.level", defaultLogLevel, "Exporter log level")
@@ -95,6 +96,9 @@ func init() {
 	rootCmd.Flags().StringVar(&settings.ApiSettings.Options.ClientSecret, "client.secret", "", "twitch client secret")
 	_ = viper.BindPFlag("client.secret", rootCmd.Flags().Lookup("TWITCH_CLIENT_SECRET"))
 
+	rootCmd.Flags().StringVar(&settings.ApiSettings.Options.ClientSecret, "access.token", "", "twitch user access token")
+	_ = viper.BindPFlag("access.token", rootCmd.Flags().Lookup("TWITCH_ACCESS_TOKEN"))
+
 	rootCmd.Flags().StringVar(&settings.ApiSettings.Options.ClientSecret, "refresh.token", "", "twitch refresh token")
 	_ = viper.BindPFlag("refresh.token", rootCmd.Flags().Lookup("TWITCH_REFRESH_TOKEN"))
 
@@ -108,10 +112,11 @@ func init() {
 	settings.UserToken = viper.GetBool("TWITCH_USER_TOKEN")
 	settings.ApiSettings = collectors.ApiSettings{
 		Options: helix.Options{
-			ClientID:     viper.GetString("TWITCH_CLIENT_ID"),
-			ClientSecret: viper.GetString("TWITCH_CLIENT_SECRET"),
-			RefreshToken: viper.GetString("TWITCH_REFRESH_TOKEN"),
-			RedirectURI:  fmt.Sprint("http://" + viper.GetString("ADDRESS") + ":" + viper.GetString("LISTEN_PORT")),
+			ClientID:        viper.GetString("TWITCH_CLIENT_ID"),
+			ClientSecret:    viper.GetString("TWITCH_CLIENT_SECRET"),
+			UserAccessToken: viper.GetString("TWITCH_ACCESS_TOKEN"),
+			RefreshToken:    viper.GetString("TWITCH_REFRESH_TOKEN"),
+			RedirectURI:     fmt.Sprint("http://" + viper.GetString("ADDRESS") + ":" + viper.GetString("LISTEN_PORT")),
 		},
 	}
 }
