@@ -138,7 +138,7 @@ docker run -d -p 9184:9184 \
         coolapso/twitch-exporter
 ```
 
-*Pre-generated access token* 
+#### Pre-generated access token
 
 You can also pre-generate the access token and refresh token, for example with Twitch CLI:
 
