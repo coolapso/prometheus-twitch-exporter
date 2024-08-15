@@ -6,10 +6,6 @@
 
 Prometheus twitch exporter to monitor twitch streams with prometheus. With support Oauth support, for both user and application tokens. 
 
-> [!IMPORTANT]
-> This project is still under developemt, breaking changes are to be expected, and some features may not yet be available
-> Even tho user tokens are already available and functional, User specific metrics are not yet available
-
 ## Install
 
 Currently you can only grab one of the binaries provided in the releases page, or run it using docker. Check each use case examples for more details.
