@@ -22,7 +22,6 @@ jobs:
         id: semrel
         with:
           hooks: goreleaser
-          allow-initial-development-versions: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
