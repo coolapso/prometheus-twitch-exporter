@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.22.5 AS builder
+FROM --platform=$BUILDPLATFORM golang:latest AS builder
 ARG TARGETARCH
 
 WORKDIR /twitch-exporter
