@@ -22,7 +22,7 @@ jobs:
         id: semrel
         with:
           hooks: goreleaser
-          custom-arguments: '--commit-analyzer-opt patch_release_rules="fix,ref,chore"'
+          custom-arguments: '--commit-analyzer-opt patch_release_rules=fix,ref,chore'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
