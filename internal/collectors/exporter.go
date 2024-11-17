@@ -101,14 +101,15 @@ func (e *Exporter) handleUserTokens() error {
 
 func (e *Exporter) collectUserMetrics() bool {
 	if e.Settings.UserToken {
+		if e.Settings.User.Name == "" {
+			e.Logger.Warn("User token provided, but no user was provided, consider removing the --user.token flag or set a user to monitor. Not scraping user metrics")
+
+			return false
+		}
+
 		return true
 	}
 
-	if e.Settings.User.Name == "" {
-		e.Logger.Warn("User token provided, but no user was provided, consider removing the --user.token flag or set a user to monitor. Not scraping user metrics")
-
-		return false
-	}
 
 	return false
 }
