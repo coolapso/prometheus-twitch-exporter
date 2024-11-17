@@ -37,7 +37,7 @@ const (
 	defaultListenPort      = "9184"
 	defaultAddress         = "localhost"
 	defaultTwitchUserToken = false
-	Version				   = "DEV"
+	Version                = "DEV"
 )
 
 var (

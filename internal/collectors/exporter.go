@@ -110,7 +110,6 @@ func (e *Exporter) collectUserMetrics() bool {
 		return true
 	}
 
-
 	return false
 }
 
