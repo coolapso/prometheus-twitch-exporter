@@ -1,9 +1,10 @@
 FROM --platform=$BUILDPLATFORM golang:latest AS builder
 ARG TARGETARCH
+ARG VERSION
 
 WORKDIR /twitch-exporter
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -a -o twitch-exporter
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags="-X github.com/coolapso/go-live-server/cmd.Version=${VERSION}" -a -o twitch-exporter
 
 FROM alpine:latest
 
