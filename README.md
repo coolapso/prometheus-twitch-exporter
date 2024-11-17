@@ -1,8 +1,10 @@
 # PROMETHEUS TWITCH EXPORTER
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/coolapso/prometheus-twitch-exporter)](https://goreportcard.com/report/github.com/coolapso/prometheus-twitch-exporter)
-[![Docker image version](https://img.shields.io/docker/v/coolapso/twitch-exporter/latest?logo=docker)](https://hub.docker.com/r/coolapso/twitch-exporter)
 [![release](https://github.com/coolapso/prometheus-twitch-exporter/actions/workflows/release.yaml/badge.svg)](https://github.com/coolapso/prometheus-twitch-exporter/actions/workflows/release.yaml)
+![GitHub Tag](https://img.shields.io/github/v/tag/coolapso/prometheus-twitch-exporter?logo=semver&label=semver&labelColor=gray&color=green)
+[![Docker image version](https://img.shields.io/docker/v/coolapso/twitch-exporter/latest?logo=docker)](https://hub.docker.com/r/coolapso/twitch-exporter)
+[![Go Report Card](https://goreportcard.com/badge/github.com/coolapso/prometheus-twitch-exporter)](https://goreportcard.com/report/github.com/coolapso/prometheus-twitch-exporter)
+![GitHub Sponsors](https://img.shields.io/github/sponsors/coolapso?style=flat&logo=githubsponsors)
 
 Prometheus twitch exporter to monitor twitch streams with prometheus. With support Oauth support, for both user and application tokens. 
 
@@ -148,7 +150,7 @@ Then provide them to the application using the flags or corresponding environmen
 
 Improvements and suggestions are always welcome, feel free to check for any open issues, open a new Issue or Pull Request
 
-If you like this project and want to support / contribute in a different way you can always: 
+If you like this project and want to support / contribute in a different way you can always [:heart: Sponsor Me](https://github.com/sponsors/coolapso) or
 
 <a href="https://www.buymeacoffee.com/coolapso" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/default-yellow.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" />
