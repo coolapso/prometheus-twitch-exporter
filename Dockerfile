@@ -4,7 +4,7 @@ ARG VERSION
 
 WORKDIR /twitch-exporter
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags="-X github.com/coolapso/go-live-server/cmd.Version=${VERSION}" -a -o twitch-exporter
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags="-X github.com/coolapso/prometheus-twitch-exporter/cmd.Version=${VERSION}" -a -o twitch-exporter
 
 FROM alpine:latest
 
