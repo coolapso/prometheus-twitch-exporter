@@ -37,12 +37,12 @@ const (
 	defaultListenPort      = "9184"
 	defaultAddress         = "localhost"
 	defaultTwitchUserToken = false
-	Version                = "DEV"
 )
 
 var (
 	settings       collectors.Settings
 	twitchChannels []string
+	Version        = "DEV"
 )
 
 func Execute() {
