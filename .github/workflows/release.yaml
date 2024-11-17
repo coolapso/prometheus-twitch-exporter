@@ -41,7 +41,7 @@ jobs:
     
   docker:
     needs: release
-    uses: coolapso/twitch-exporter/.github/workflows/docker.yaml@main
+    uses: coolapso/prometheus-twitch-exporter/.github/workflows/docker.yaml@main
     if: ${{ needs.release.outputs.version != '' }}
     secrets: inherit
     with:
