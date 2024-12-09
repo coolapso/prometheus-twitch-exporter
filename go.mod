@@ -3,7 +3,7 @@ module github.com/coolapso/prometheus-twitch-exporter
 go 1.23
 
 require (
-	github.com/nicklaw5/helix/v2 v2.30.0
+	github.com/nicklaw5/helix/v2 v2.31.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.60.1
 	github.com/spf13/cobra v1.8.1
